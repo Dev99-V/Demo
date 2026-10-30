@@ -614,7 +614,7 @@ function buildExportRows() {
         const loc = r.location || '(trống)';
         const usr = r.user_name || '(trống)';
         if (!locAgg.has(loc)) locAgg.set(loc, { n: 0, tags: new Set() });
-        if (!usrAgg.has(usr)) userAgg.set(usr, 0);
+        if (!userAgg.has(usr)) userAgg.set(usr, 0);
         locAgg.get(loc).n++; locAgg.get(loc).tags.add(r.tag_id);
         userAgg.set(usr, userAgg.get(usr) + 1);
         tagCount.set(r.tag_id, (tagCount.get(r.tag_id) || 0) + 1);
@@ -673,36 +673,47 @@ function exportExcel() {
         return;
     }
 
-    const wb = XLSX.utils.book_new();
-    const sheets = [
-        ['TongHop', data.summary],
-        ['ChiTiet', data.detail],
-        ['TheoViTri', data.byLoc],
-        ['TheoUser', data.byUser],
-        ['TagTrung', data.dup]
-    ];
-    sheets.forEach(function (s) {
-        const ws = XLSX.utils.aoa_to_sheet(s[1]);
-        // Ép cột Tag ID (cột B trong ChiTiet / cột A trong TagTrung) thành TEXT để giữ nguyên số 0 đầu
-        if (s[0] === 'ChiTiet') {
-            const range = XLSX.utils.decode_range(ws['!ref']);
-            for (let r = 1; r <= range.e.r; r++) {
-                const cell = ws[XLSX.utils.encode_cell({ r: r, c: 1 })];
-                if (cell) { cell.t = 's'; cell.z = '@'; }
-            }
-            ws['!cols'] = [{ wch: 6 }, { wch: 26 }, { wch: 24 }, { wch: 18 }, { wch: 22 }, { wch: 22 }];
+    function forceTextCells(ws, cols) {
+        if (!ws['!ref']) return;
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        for (let r = 1; r <= range.e.r; r++) {
+            cols.forEach(function (c) {
+                const cell = ws[XLSX.utils.encode_cell({ r: r, c: c })];
+                if (!cell || cell.v === undefined || cell.v === null) return;
+                cell.t = 's';
+                cell.v = String(cell.v);
+                cell.z = '@';
+            });
         }
-        if (s[0] === 'TagTrung' || s[0] === 'TheoViTri') {
-            const range = XLSX.utils.decode_range(ws['!ref']);
-            for (let r = 1; r <= range.e.r; r++) {
-                const cell = ws[XLSX.utils.encode_cell({ r: r, c: 0 })];
-                if (cell && cell.v !== undefined) { cell.t = 's'; cell.z = '@'; }
+    }
+
+    try {
+        const wb = XLSX.utils.book_new();
+        const sheets = [
+            ['TongHop', data.summary],
+            ['ChiTiet', data.detail],
+            ['TheoViTri', data.byLoc],
+            ['TheoUser', data.byUser],
+            ['TagTrung', data.dup]
+        ];
+        sheets.forEach(function (s) {
+            const ws = XLSX.utils.aoa_to_sheet(s[1]);
+            // Tag ID + Vị trí: cell kiểu text, định dạng '@' — Excel giữ nguyên, không tự đổi thành số/ngày,
+            // và không cần (cũng không hiển thị) dấu nháy đơn ở đầu.
+            if (s[0] === 'ChiTiet') {
+                forceTextCells(ws, [1, 2]);
+                ws['!cols'] = [{ wch: 6 }, { wch: 26 }, { wch: 24 }, { wch: 18 }, { wch: 22 }, { wch: 22 }];
+            } else if (s[0] === 'TheoViTri' || s[0] === 'TagTrung') {
+                forceTextCells(ws, [0]);
             }
-        }
-        XLSX.utils.book_append_sheet(wb, ws, s[0]);
-    });
-    XLSX.writeFile(wb, 'pda_center_' + stamp() + '.xlsx');
-    setStatus('Đã xuất Excel ' + filtered.length + ' dòng (5 sheet: TongHop, ChiTiet, TheoViTri, TheoUser, TagTrung).', 'success');
+            XLSX.utils.book_append_sheet(wb, ws, s[0]);
+        });
+        XLSX.writeFile(wb, 'pda_center_' + stamp() + '.xlsx');
+        setStatus('Đã xuất Excel ' + filtered.length + ' dòng (5 sheet: TongHop, ChiTiet, TheoViTri, TheoUser, TagTrung).', 'success');
+    } catch (err) {
+        console.error('Excel export error', err);
+        setStatus('Xuất Excel lỗi: ' + (err.message || err), 'error');
+    }
 }
 
 function exportCsv() {
