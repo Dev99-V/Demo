@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDA DATA CENTER — Tổng hợp pda_scans</title>
+    <style>
+        :root {
+            --neon-indigo: #6366f1;
+            --neon-cyan: #06b6d4;
+            --neon-emerald: #10b981;
+            --neon-rose: #f43f5e;
+            --neon-amber: #f59e0b;
+            --bg-dark: #020617;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg-dark);
+            background-image: radial-gradient(circle at 20% -10%, rgba(99,102,241,0.18), transparent 45%),
+                              radial-gradient(circle at 90% 10%, rgba(6,182,212,0.12), transparent 40%);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        .font-cyber { font-family: 'Courier New', Courier, monospace; }
+        .wrap { max-width: 1180px; margin: 0 auto; }
+        .glass {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.55);
+        }
+        .panel { border-radius: 20px; padding: 1.1rem; margin-bottom: 1rem; }
+        .hidden { display: none !important; }
+        .topbar {
+            border-radius: 20px;
+            padding: 1.1rem 1.25rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 4px solid var(--neon-indigo);
+            margin-bottom: 1rem;
+        }
+        .brand h1 { font-size: 1.35rem; font-weight: 900; letter-spacing: 0.12em; color: #fff; }
+        .brand .sub { font-size: 10px; text-transform: uppercase; letter-spacing: 0.25em; color: #818cf8; font-weight: 700; margin-top: 3px; }
+        .top-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+        .badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+            padding: 6px 10px; border-radius: 999px;
+            background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.12);
+        }
+        .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .dot-on { background: #10b981; box-shadow: 0 0 8px #10b981; }
+        .dot-off { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
+        .dot-load { background: #6366f1; box-shadow: 0 0 8px #6366f1; animation: pulse .6s infinite alternate; }
+        @keyframes pulse { from { opacity: .35; } to { opacity: 1; } }
+        .meta { font-size: 10px; color: #94a3b8; font-family: ui-monospace, Menlo, Consolas, monospace; }
+        button {
+            cursor: pointer; border: none; font-family: inherit; font-weight: 700;
+            transition: all .15s ease; color: #fff;
+        }
+        button:active { transform: scale(.96); }
+        button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+        .btn { border-radius: 12px; padding: 9px 14px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+        .btn-indigo { background: #4f46e5; }
+        .btn-green { background: #059669; }
+        .btn-slate { background: #1e293b; color: #cbd5e1; }
+        .btn-ghost { background: rgba(99,102,241,.2); border: 1px solid rgba(99,102,241,.4); }
+        .btn-rose { background: rgba(244,63,94,.15); border: 1px solid rgba(244,63,94,.45); color: #fb7185; }
+        .btn:disabled:hover { filter: none; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: .75rem; margin-bottom: 1rem; }
+        .stat { border-radius: 16px; padding: .9rem 1rem; text-align: center; }
+        .stat .val { font-size: 1.6rem; font-weight: 900; font-family: 'Courier New', monospace; color: #22d3ee; }
+        .stat .lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .15em; color: #94a3b8; margin-top: 4px; }
+        .stat.warn .val { color: #fb7185; }
+        .stat.ok .val { color: #34d399; }
+        .stat.ind .val { color: #818cf8; }
+        .filters { display: flex; flex-wrap: wrap; gap: .6rem; align-items: end; }
+        .fgroup { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+        .fgroup label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #818cf8; }
+        input, select {
+            background: rgba(0,0,0,.45); border: 2px solid rgba(99,102,241,.45);
+            outline: none; color: #fff; border-radius: 10px; padding: 8px 10px; font-size: 12px;
+            font-family: inherit;
+        }
+        input:focus, select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.2); }
+        .grow { flex: 1 1 200px; }
+        .chk { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #fbbf24; padding: 8px 4px; white-space: nowrap; }
+        .chk input { accent-color: #f59e0b; padding: 0; }
+        .status { border-radius: 12px; padding: 10px 12px; font-size: 12px; font-weight: 700; margin-bottom: 1rem; }
+        .status.info { background: rgba(99,102,241,.15); border: 1px solid rgba(99,102,241,.4); color: #818cf8; }
+        .status.success { background: rgba(16,185,129,.15); border: 1px solid rgba(16,185,129,.4); color: #34d399; }
+        .status.error { background: rgba(244,63,94,.15); border: 1px solid rgba(244,63,94,.4); color: #fb7185; word-break: break-word; }
+        .table-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; align-items: center; margin-bottom: .6rem; }
+        .table-head .t { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #94a3b8; }
+        .pill { font-size: 10px; font-weight: 700; padding: 4px 9px; border-radius: 999px; }
+        .pill-amber { background: rgba(245,158,11,.15); border: 1px solid rgba(245,158,11,.35); color: #fbbf24; }
+        .pill-ind { background: rgba(99,102,241,.2); border: 1px solid rgba(99,102,241,.35); color: #818cf8; }
+        .table-scroll { overflow: auto; max-height: 62vh; border-radius: 12px; }
+        table { border-collapse: collapse; width: 100%; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+        thead th {
+            position: sticky; top: 0; z-index: 2;
+            background: #0b1224; color: #94a3b8; text-align: left;
+            font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
+            padding: 10px 8px; cursor: pointer; user-select: none; white-space: nowrap;
+            border-bottom: 1px solid rgba(255,255,255,.12);
+        }
+        thead th:hover { color: #fff; }
+        thead th .arrow { color: #22d3ee; }
+        tbody td { padding: 9px 8px; border-bottom: 1px solid rgba(255,255,255,.06); }
+        tbody tr:hover { background: rgba(255,255,255,.04); }
+        .tag-cell { color: #22d3ee; font-weight: 700; }
+        .dup-row { background: rgba(244,63,94,.18); border-left: 3px solid var(--neon-rose); animation: alertflash .8s infinite alternate; }
+        @keyframes alertflash { from { box-shadow: inset 0 0 0 rgba(244,63,94,0); } to { box-shadow: inset 0 0 14px rgba(244,63,94,.55); } }
+        .dup-row .tag-cell { color: #fb7185; }
+        .pager { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: center; padding-top: .8rem; }
+        .pager .pginfo { font-size: 11px; color: #94a3b8; font-family: ui-monospace, monospace; }
+        .empty { text-align: center; color: #64748b; padding: 2rem 1rem !important; font-family: inherit; }
+        .modal-back { position: fixed; inset: 0; z-index: 50; background: rgba(2,6,23,.85); display: flex; align-items: center; justify-content: center; padding: 1rem; }
+        .modal { width: 100%; max-width: 30rem; border-radius: 20px; padding: 1.25rem; border-top: 4px solid var(--neon-indigo); }
+        .modal h2 { font-size: 1rem; color: #fff; margin-bottom: .75rem; }
+        .modal .row { margin-bottom: .75rem; }
+        .modal label { display: block; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #818cf8; margin-bottom: 4px; }
+        .modal input { width: 100%; font-family: ui-monospace, monospace; font-size: 11px; }
+        .modal .acts { display: flex; gap: .6rem; margin-top: .5rem; }
+        .modal .acts button { flex: 1; }
+        .muted { font-size: 11px; color: #94a3b8; margin-bottom: .75rem; line-height: 1.5; }
+        @media (max-width: 640px) {
+            .brand h1 { font-size: 1.1rem; }
+            .btn { padding: 8px 10px; font-size: 10px; }
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+
+    <!-- HEADER -->
+    <header class="topbar glass">
+        <div class="brand">
+            <h1 class="font-cyber">📊 PDA DATA CENTER</h1>
+            <p class="sub">Tổng hợp toàn bộ dữ liệu bảng <span id="tblNameLbl">pda_scans</span></p>
+        </div>
+        <div class="top-actions">
+            <span class="badge" id="netBadge"><span class="dot dot-off" id="netDot"></span><span id="netText">KIỂM TRA...</span></span>
+            <span class="meta" id="metaInfo">—</span>
+            <button class="btn btn-indigo" id="btnRefresh">🔄 LÀM MỚI</button>
+            <button class="btn btn-green" id="btnExportXls">📥 XUẤT EXCEL</button>
+            <button class="btn btn-slate" id="btnExportCsv">📄 CSV</button>
+            <button class="btn btn-ghost" id="btnSettings" title="Cấu hình Supabase">⚙️</button>
+        </div>
+    </header>
+
+    <!-- THÔNG TRẠNG -->
+    <div id="statusBox" class="status hidden"></div>
+
+    <!-- THỐNG KÊ -->
+    <section class="stats">
+        <div class="stat glass"><div class="val" id="stTotal">0</div><div class="lbl">Tổng bản ghi</div></div>
+        <div class="stat glass ind"><div class="val" id="stUnique">0</div><div class="lbl">Tag duy nhất</div></div>
+        <div class="stat glass warn"><div class="val" id="stDup">0</div><div class="lbl">Tag bị trùng</div></div>
+        <div class="stat glass ok"><div class="val" id="stLoc">0</div><div class="lbl">Vị trí</div></div>
+        <div class="stat glass ind"><div class="val" id="stUser">0</div><div class="lbl">Người quét</div></div>
+    </section>
+
+    <!-- BỘ LỌC -->
+    <section class="panel glass filters">
+        <div class="fgroup grow">
+            <label for="fSearch">Tìm kiếm (Tag / Vị trí / User)</label>
+            <input type="search" id="fSearch" placeholder="Nhập từ khóa..." autocomplete="off">
+        </div>
+        <div class="fgroup">
+            <label for="fLoc">Vị trí</label>
+            <select id="fLoc"><option value="">— Tất cả —</option></select>
+        </div>
+        <div class="fgroup">
+            <label for="fUser">Người quét</label>
+            <select id="fUser"><option value="">— Tất cả —</option></select>
+        </div>
+        <div class="fgroup">
+            <label for="fFrom">Từ ngày</label>
+            <input type="date" id="fFrom">
+        </div>
+        <div class="fgroup">
+            <label for="fTo">Đến ngày</label>
+            <input type="date" id="fTo">
+        </div>
+        <label class="chk"><input type="checkbox" id="fDupOnly"> CHỈ TRÙNG TAG</label>
+        <button class="btn btn-rose" id="btnResetFilter">✖ XÓA LỌC</button>
+    </section>
+
+    <!-- BẢNG DỮ LIỆU -->
+    <section class="panel glass">
+        <div class="table-head">
+            <span class="t">Kết quả lọc: <b id="resCount" style="color:#22d3ee">0</b> / <b id="totalCount" style="color:#818cf8">0</b> bản ghi</span>
+            <span class="pill pill-amber" id="dupNote">0 TAG TRÙNG</span>
+        </div>
+        <div class="table-scroll custom-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th data-sort="id" style="width:60px"># <span class="arrow" data-k="id"></span></th>
+                        <th data-sort="tag_id">TAG ID <span class="arrow" data-k="tag_id"></span></th>
+                        <th data-sort="location">VỊ TRÍ <span class="arrow" data-k="location"></span></th>
+                        <th data-sort="user_name">USER <span class="arrow" data-k="user_name"></span></th>
+                        <th data-sort="scanned_at">THỜI GIAN QUÉT <span class="arrow" data-k="scanned_at"></span></th>
+                        <th data-sort="created_at">GHI NHẬN (SERVER) <span class="arrow" data-k="created_at"></span></th>
+                        <th data-sort="" style="width:60px;text-align:center">ACT</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody"><tr><td colspan="7" class="empty">Chưa có dữ liệu — bấm 🔄 LÀM MỚI</td></tr></tbody>
+            </table>
+        </div>
+        <div class="pager">
+            <button class="btn btn-slate" id="btnPrev">‹ TRƯỚC</button>
+            <span class="pginfo" id="pgInfo">Trang 1/1</span>
+            <button class="btn btn-slate" id="btnNext">SAU ›</button>
+            <select id="pgSize" title="Số dòng/trang">
+                <option value="25">25</option>
+                <option value="50" selected>50</option>
+                <option value="100">100</option>
+                <option value="200">200</option>
+            </select>
+        </div>
+    </section>
+</div>
+
+<!-- MODAL CẤU HÌNH (DÙNG CHUNG localStorage VỚI ỨNG DỤNG PDA) -->
+<div id="settingsModal" class="modal-back hidden">
+    <div class="modal glass">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+            <h2 class="font-cyber">⚙️ CẤU HÌNH SUPABASE</h2>
+            <button id="btnCloseSettings" style="background:none;font-size:18px;color:#94a3b8">✕</button>
+        </div>
+        <p class="muted">Cấu hình dùng chung với app PDA trên cùng domain. Cột: tag_id, location, user_name, scanned_at, created_at.</p>
+        <div class="row"><label>Supabase REST URL</label><input type="text" id="cfgUrl"></div>
+        <div class="row"><label>API Key (anon / service_role)</label><input type="password" id="cfgKey"></div>
+        <div class="row"><label>Table Name</label><input type="text" id="cfgTable"></div>
+        <div class="acts">
+            <button class="btn btn-indigo" id="btnSaveCfg">💾 LƯU</button>
+            <button class="btn btn-slate" id="btnCloseCfg2">ĐÓNG</button>
+        </div>
+    </div>
+</div>
+
+<!-- Thư viện Excel (chỉ cần khi xuất file; nếu CDN chết → fallback CSV) -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js" onerror="window.__xlsxFailed=true"></script>
+
+<script>
+'use strict';
+
+// =========================================================================
+// CẤU HÌNH (DÙNG CHUNG localStorage KEY VỚI APP PDA → đổi 1 nơi áp dụng cả 2)
+// =========================================================================
+const DEFAULT_SUPABASE_CONFIG = {
+    url: 'https://iipioojuoucyhipvyscq.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpcGlvb2p1b3VjeWhpcHZ5c2NxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MzMxMzc4NiwiZXhwIjoyMTA4ODg5Nzg2fQ.3pMRmZ_n_LerAwJQJ4XvYs2BWrUHDz4ITcd0YqXXMzs',
+    tableName: 'pda_scans'
+};
+const CONFIG_STORAGE_KEY = 'pda_supabase_config_v1';   // giống index.html
+const CACHE_KEY = 'pda_center_cache_v1';
+const FETCH_CHUNK = 1000;   // Supabase/PostgREST mặc định giới hạn 1000 dòng/request
+const CACHE_MAX = 5000;     // số dòng tối đa lưu cache offline
+
+// State
+let allRows = [];
+let filtered = [];
+let sortKey = 'id';
+let sortDir = 'desc';
+let page = 1;
+let perPage = 50;
+let dupSet = new Set();
+let loading = false;
+let lastUpdate = null;
+let fromCache = false;
+
+// DOM
+const $ = function (id) { return document.getElementById(id); };
+const tbody = $('tbody'), statusBox = $('statusBox');
+const fSearch = $('fSearch'), fLoc = $('fLoc'), fUser = $('fUser'), fFrom = $('fFrom'), fTo = $('fTo'), fDupOnly = $('fDupOnly');
+const btnRefresh = $('btnRefresh'), btnExportXls = $('btnExportXls'), btnExportCsv = $('btnExportCsv');
+
+// =========================================================================
+// CONFIG HELPERS
+// =========================================================================
+function getConfig() {
+    try {
+        const raw = localStorage.getItem(CONFIG_STORAGE_KEY);
+        if (raw) {
+            const p = JSON.parse(raw);
+            return {
+                url: (p.url || DEFAULT_SUPABASE_CONFIG.url).trim().replace(/\/+$/, ''),
+                anonKey: (p.anonKey || DEFAULT_SUPABASE_CONFIG.anonKey).trim(),
+                tableName: (p.tableName || DEFAULT_SUPABASE_CONFIG.tableName).trim() || 'pda_scans'
+            };
+        }
+    } catch (e) { console.warn('config read err', e); }
+    return { url: DEFAULT_SUPABASE_CONFIG.url, anonKey: DEFAULT_SUPABASE_CONFIG.anonKey, tableName: DEFAULT_SUPABASE_CONFIG.tableName };
+}
+function saveConfig(url, key, table) {
+    const cfg = { url: url.trim().replace(/\/+$/, ''), anonKey: key.trim(), tableName: table.trim() || 'pda_scans' };
+    localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(cfg));
+    return cfg;
+}
+
+// =========================================================================
+// UI HELPERS
+// =========================================================================
+function setStatus(msg, type) {
+    if (!msg) { statusBox.classList.add('hidden'); return; }
+    statusBox.className = 'status ' + (type || 'info');
+    statusBox.textContent = msg;
+}
+function escapeHtml(v) {
+    return String(v == null ? '' : v)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+function updateNet(loadingState) {
+    const dot = $('netDot'), txt = $('netText');
+    if (loadingState) {
+        dot.className = 'dot dot-load'; txt.textContent = 'ĐANG TẢI...'; txt.style.color = '#818cf8';
+    } else if (navigator.onLine) {
+        dot.className = 'dot dot-on'; txt.textContent = 'ONLINE'; txt.style.color = '#34d399';
+    } else {
+        dot.className = 'dot dot-off'; txt.textContent = 'OFFLINE (XEM CACHE)'; txt.style.color = '#fbbf24';
+    }
+}
+function fmtTime(iso) {
+    if (!iso) return '—';
+    try {
+        const d = new Date(iso);
+        if (isNaN(d)) return String(iso);
+        const p = function (n) { return String(n).padStart(2, '0'); };
+        return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    } catch (e) { return String(iso); }
+}
+// Trả về ngày 'yyyy-mm-dd' của 1 dòng (ưu tiên created_at, fallback scanned_at dd/mm/yyyy)
+function rowDate(r) {
+    if (r.created_at) return String(r.created_at).slice(0, 10);
+    const m = String(r.scanned_at || '').match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    if (m) return m[3] + '-' + m[2] + '-' + m[1];
+    return '';
+}
+
+// =========================================================================
+// TẢI DỮ LIỆU TỪ SUPABASE (PHÂN TRANG 1000 DÒNG/LẦN → LẤY TOÀN BỘ)
+// =========================================================================
+async function fetchAllRows(cfg, onProgress) {
+    const base = cfg.url + '/rest/v1/' + encodeURIComponent(cfg.tableName);
+    const headers = {
+        'apikey': cfg.anonKey,
+        'Authorization': 'Bearer ' + cfg.anonKey,
+        'Accept': 'application/json'
+    };
+    let rows = [], offset = 0;
+    for (;;) {
+        const url = base + '?select=*&order=id.desc&limit=' + FETCH_CHUNK + '&offset=' + offset;
+        const res = await fetch(url, { headers: headers, cache: 'no-store' });
+        if (!res.ok) {
+            let detail = 'HTTP ' + res.status;
+            try {
+                const j = await res.json();
+                detail = j.message || j.error || JSON.stringify(j);
+                if (j.code === 'PGRST205') {
+                    throw new Error('BẢNG "' + cfg.tableName + '" KHÔNG TỒN TẠI. Hãy chạy SQL: create table public.' + cfg.tableName +
+                        ' (id bigint generated always as identity primary key, tag_id text, location text, user_name text, scanned_at text, created_at timestamptz default now());');
+                }
+            } catch (e) {
+                if (e.message && e.message.indexOf('BẢNG') === 0) throw e;
+            }
+            throw new Error(detail);
+        }
+        const chunk = await res.json();
+        rows = rows.concat(chunk);
+        if (onProgress) onProgress(rows.length);
+        if (chunk.length < FETCH_CHUNK) break;
+        offset += FETCH_CHUNK;
+        if (offset > 200000) break;   // giới hạn an toàn
+    }
+    return rows;
+}
+
+function saveCache(rows) {
+    try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), rows: rows.slice(0, CACHE_MAX) }));
+    } catch (e) { console.warn('cache full, bỏ qua', e); }
+}
+function loadCache() {
+    try {
+        const raw = localStorage.getItem(CACHE_KEY);
+        if (!raw) return null;
+        const o = JSON.parse(raw);
+        if (o && Array.isArray(o.rows)) return o;
+    } catch (e) {}
+    return null;
+}
+
+// =========================================================================
+// REFRESH (KÉO TOÀN BỘ DỮ LIỆU)
+// =========================================================================
+async function refresh() {
+    if (loading) return;
+    const cfg = getConfig();
+    if (!cfg.url || !cfg.anonKey) { openSettings(); setStatus('Chưa cấu hình Supabase — bấm ⚙️ để điền URL và Key.', 'error'); return; }
+
+    loading = true;
+    btnRefresh.disabled = true;
+    updateNet(true);
+    setStatus('Đang tải toàn bộ dữ liệu từ bảng "' + cfg.tableName + '"...', 'info');
+
+    try {
+        const rows = await fetchAllRows(cfg, function (n) {
+            setStatus('Đang tải... đã nhận ' + n + ' bản ghi', 'info');
+        });
+        allRows = rows;
+        fromCache = false;
+        lastUpdate = new Date();
+        saveCache(rows);
+        buildFilterOptions();
+        applyFilters();
+        setStatus('Tải thành công ' + rows.length + ' bản ghi lúc ' + fmtTime(lastUpdate) + '.', 'success');
+    } catch (err) {
+        console.error(err);
+        setStatus('LỖI: ' + (err.message || 'Không kết nối được Supabase') +
+            (navigator.onLine ? '' : ' — đang OFFLINE, hiển thị dữ liệu cache (nếu có).'), 'error');
+        applyFilters();
+    } finally {
+        loading = false;
+        btnRefresh.disabled = false;
+        updateNet(false);
+        renderMeta();
+    }
+}
+
+// =========================================================================
+// BỘ LỌC / SẮP XẾP / PHÂN TRANG
+// =========================================================================
+function buildFilterOptions() {
+    const locs = new Set(), users = new Set();
+    allRows.forEach(function (r) {
+        if (r.location) locs.add(r.location);
+        if (r.user_name) users.add(r.user_name);
+    });
+    fillSelect(fLoc, locs, '— Tất cả —');
+    fillSelect(fUser, users, '— Tất cả —');
+}
+function fillSelect(sel, set, allLabel) {
+    const cur = sel.value;
+    const arr = Array.from(set).sort(function (a, b) { return String(a).localeCompare(String(b), 'vi'); });
+    let html = '<option value="">' + allLabel + '</option>';
+    arr.forEach(function (v) { html += '<option value="' + escapeHtml(v) + '">' + escapeHtml(v) + '</option>'; });
+    sel.innerHTML = html;
+    if (cur) sel.value = cur;
+}
+
+function computeDupSet(rows) {
+    const c = new Map();
+    rows.forEach(function (r) { const t = r.tag_id; c.set(t, (c.get(t) || 0) + 1); });
+    const dup = new Set();
+    c.forEach(function (n, t) { if (n > 1) dup.add(t); });
+    return { dup: dup, count: c.size, dupCount: dup.size };
+}
+
+function applyFilters() {
+    const q = fSearch.value.trim().toLowerCase();
+    const loc = fLoc.value, usr = fUser.value;
+    const from = fFrom.value, to = fTo.value;
+    const dupOnly = fDupOnly.checked;
+
+    const stats = computeDupSet(allRows);
+    dupSet = stats.dup;
+
+    filtered = allRows.filter(function (r) {
+        if (dupOnly && !dupSet.has(r.tag_id)) return false;
+        if (loc && r.location !== loc) return false;
+        if (usr && r.user_name !== usr) return false;
+        if (from || to) {
+            const d = rowDate(r);
+            if (!d) return false;
+            if (from && d < from) return false;
+            if (to && d > to) return false;
+        }
+        if (q) {
+            const hay = (r.tag_id + ' ' + (r.location || '') + ' ' + (r.user_name || '')).toLowerCase();
+            if (hay.indexOf(q) === -1) return false;
+        }
+        return true;
+    });
+
+    sortRows();
+    page = 1;
+    renderAll();
+}
+
+function sortRows() {
+    const k = sortKey, dir = sortDir === 'asc' ? 1 : -1;
+    filtered.sort(function (a, b) {
+        let va = a[k], vb = b[k];
+        if (k === 'id') { va = Number(va) || 0; vb = Number(vb) || 0; return (va - vb) * dir; }
+        va = (va == null ? '' : String(va)).toLowerCase();
+        vb = (vb == null ? '' : String(vb)).toLowerCase();
+        if (va < vb) return -1 * dir;
+        if (va > vb) return 1 * dir;
+        return 0;
+    });
+}
+
+// =========================================================================
+// RENDER
+// =========================================================================
+function renderAll() { renderStats(); renderTable(); renderMeta(); }
+
+function renderStats() {
+    const stats = computeDupSet(allRows);
+    const locs = new Set(), users = new Set();
+    allRows.forEach(function (r) { if (r.location) locs.add(r.location); if (r.user_name) users.add(r.user_name); });
+    $('stTotal').textContent = allRows.length.toLocaleString('vi-VN');
+    $('stUnique').textContent = stats.count.toLocaleString('vi-VN');
+    $('stDup').textContent = stats.dupCount.toLocaleString('vi-VN');
+    $('stLoc').textContent = locs.size.toLocaleString('vi-VN');
+    $('stUser').textContent = users.size.toLocaleString('vi-VN');
+    $('dupNote').textContent = stats.dupCount + ' TAG TRÙNG';
+    $('resCount').textContent = filtered.length.toLocaleString('vi-VN');
+    $('totalCount').textContent = allRows.length.toLocaleString('vi-VN');
+}
+
+function renderMeta() {
+    const parts = [];
+    parts.push(allRows.length + ' dòng');
+    if (fromCache) parts.push('CACHE ' + fmtTime(lastUpdate));
+    else if (lastUpdate) parts.push('cập nhật ' + fmtTime(lastUpdate));
+    else parts.push('chưa tải');
+    $('metaInfo').textContent = parts.join(' · ');
+    $('tblNameLbl').textContent = getConfig().tableName;
+}
+
+function renderTable() {
+    const total = filtered.length;
+    const pages = Math.max(1, Math.ceil(total / perPage));
+    if (page > pages) page = pages;
+    const start = (page - 1) * perPage;
+    const slice = filtered.slice(start, start + perPage);
+
+    if (slice.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty">Không có dữ liệu phù hợp</td></tr>';
+    } else {
+        const html = new Array(slice.length);
+        for (let i = 0; i < slice.length; i++) {
+            const r = slice[i];
+            const isDup = dupSet.has(r.tag_id);
+            html[i] =
+                '<tr class="' + (isDup ? 'dup-row' : '') + '">' +
+                '<td style="color:#64748b">' + (start + i + 1) + '</td>' +
+                '<td class="tag-cell">' + escapeHtml(r.tag_id) + '</td>' +
+                '<td>' + escapeHtml(r.location || '') + '</td>' +
+                '<td style="color:#cbd5e1">' + escapeHtml(r.user_name || '') + '</td>' +
+                '<td style="color:#94a3b8">' + escapeHtml(r.scanned_at || '') + '</td>' +
+                '<td style="color:#64748b">' + escapeHtml(fmtTime(r.created_at)) + '</td>' +
+                '<td style="text-align:center"><button class="btn btn-rose" style="padding:4px 7px;font-size:11px" data-del="' + escapeHtml(r.id) + '" title="Xóa bản ghi">🗑️</button></td>' +
+                '</tr>';
+        }
+        tbody.innerHTML = html.join('');
+    }
+
+    $('pgInfo').textContent = 'Trang ' + page + '/' + pages + ' · ' + total + ' dòng';
+    $('btnPrev').disabled = page <= 1;
+    $('btnNext').disabled = page >= pages;
+
+    document.querySelectorAll('th[data-sort]').forEach(function (th) {
+        const k = th.getAttribute('data-sort');
+        const arrow = th.querySelector('.arrow');
+        if (arrow) arrow.textContent = (k && k === sortKey) ? (sortDir === 'asc' ? '▲' : '▼') : '';
+    });
+}
+
+// =========================================================================
+// XÓA 1 BẢN GHI (TRỰC TIẾP LÊN SUPABASE)
+// =========================================================================
+tbody.addEventListener('click', async function (e) {
+    const btn = e.target.closest('button[data-del]');
+    if (!btn) return;
+    const id = btn.getAttribute('data-del');
+    const row = filtered.find(function (r) { return String(r.id) === String(id); });
+    if (!row) return;
+    if (!confirm('Xóa bản ghi Tag "' + row.tag_id + '" khỏi Supabase?')) return;
+
+    const cfg = getConfig();
+    try {
+        const res = await fetch(cfg.url + '/rest/v1/' + encodeURIComponent(cfg.tableName) + '?id=eq.' + encodeURIComponent(id), {
+            method: 'DELETE',
+            headers: { 'apikey': cfg.anonKey, 'Authorization': 'Bearer ' + cfg.anonKey }
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        allRows = allRows.filter(function (r) { return String(r.id) !== String(id); });
+        saveCache(allRows);
+        applyFilters();
+        setStatus('Đã xóa bản ghi #' + id, 'success');
+    } catch (err) {
+        setStatus('Không xóa được: ' + err.message, 'error');
+    }
+});
+
+// =========================================================================
+// XUẤT EXCEL (SheetJS) — CÓ 4 SHEET TỔNG HỢP; fallback CSV NẾU CDN CHẾT
+// =========================================================================
+function buildExportRows() {
+    const src = filtered;
+    const locAgg = new Map(), userAgg = new Map();
+    const tagCount = new Map();
+    src.forEach(function (r) {
+        const loc = r.location || '(trống)';
+        const usr = r.user_name || '(trống)';
+        if (!locAgg.has(loc)) locAgg.set(loc, { n: 0, tags: new Set() });
+        if (!usrAgg.has(usr)) userAgg.set(usr, 0);
+        locAgg.get(loc).n++; locAgg.get(loc).tags.add(r.tag_id);
+        userAgg.set(usr, userAgg.get(usr) + 1);
+        tagCount.set(r.tag_id, (tagCount.get(r.tag_id) || 0) + 1);
+    });
+    const dupTags = [];
+    tagCount.forEach(function (n, t) { if (n > 1) dupTags.push([t, n]); });
+    dupTags.sort(function (a, b) { return b[1] - a[1]; });
+
+    const summary = [
+        ['CHỈ SỐ', 'GIÁ TRỊ'],
+        ['Bảng dữ liệu', getConfig().tableName],
+        ['Tổng bản ghi (lọc)', src.length],
+        ['Tổng bản ghi (toàn bộ)', allRows.length],
+        ['Tag duy nhất', tagCount.size],
+        ['Số tag bị trùng', dupTags.length],
+        ['Số vị trí', locAgg.size],
+        ['Số người quét', userAgg.size],
+        ['Thời điểm xuất', new Date().toLocaleString('vi-VN', { hour12: false })],
+        ['Bộ lọc tìm kiếm', fSearch.value || '(không)'],
+        ['Bộ lọc vị trí', fLoc.value || '(tất cả)'],
+        ['Bộ lọc người quét', fUser.value || '(tất cả)'],
+        ['Khoảng ngày', (fFrom.value || '..') + ' → ' + (fTo.value || '..')]
+    ];
+
+    const detail = [['STT', 'Tag ID', 'Vị trí', 'User quét', 'Thời gian quét (PDA)', 'Ghi nhận lúc (server)']];
+    src.forEach(function (r, i) {
+        detail.push([i + 1, String(r.tag_id), r.location || '', r.user_name || '', r.scanned_at || '', fmtTime(r.created_at)]);
+    });
+
+    const byLoc = [['Vị trí', 'Số bản ghi', 'Tag duy nhất']];
+    Array.from(locAgg.entries()).sort(function (a, b) { return b[1].n - a[1].n; })
+        .forEach(function (e) { byLoc.push([e[0], e[1].n, e[1].tags.size]); });
+
+    const byUser = [['Người quét', 'Số bản ghi']];
+    Array.from(userAgg.entries()).sort(function (a, b) { return b[1] - a[1]; })
+        .forEach(function (e) { byUser.push([e[0], e[1]]); });
+
+    const dupSheet = [['Tag ID', 'Số lần quét', 'Ghi chú']];
+    dupTags.forEach(function (e) { dupSheet.push([String(e[0]), e[1], 'TRÙNG']); });
+
+    return { summary: summary, detail: detail, byLoc: byLoc, byUser: byUser, dup: dupTags.length ? dupSheet : [['Tag ID', 'Số lần quét', 'Ghi chú'], ['(không có tag trùng)', 0, '']] };
+}
+
+function stamp() {
+    const d = new Date(), p = function (n) { return String(n).padStart(2, '0'); };
+    return '' + p(d.getDate()) + p(d.getMonth() + 1) + d.getFullYear() + '_' + p(d.getHours()) + p(d.getMinutes());
+}
+
+function exportExcel() {
+    if (filtered.length === 0) { setStatus('Không có dữ liệu để xuất (hãy bỏ bớt bộ lọc).', 'error'); return; }
+    const data = buildExportRows();
+
+    if (typeof XLSX === 'undefined') {
+        setStatus('Không tải được thư viện Excel (mất mạng CDN) — chuyển sang xuất CSV cho anh.', 'info');
+        exportCsv();
+        return;
+    }
+
+    const wb = XLSX.utils.book_new();
+    const sheets = [
+        ['TongHop', data.summary],
+        ['ChiTiet', data.detail],
+        ['TheoViTri', data.byLoc],
+        ['TheoUser', data.byUser],
+        ['TagTrung', data.dup]
+    ];
+    sheets.forEach(function (s) {
+        const ws = XLSX.utils.aoa_to_sheet(s[1]);
+        // Ép cột Tag ID (cột B trong ChiTiet / cột A trong TagTrung) thành TEXT để giữ nguyên số 0 đầu
+        if (s[0] === 'ChiTiet') {
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            for (let r = 1; r <= range.e.r; r++) {
+                const cell = ws[XLSX.utils.encode_cell({ r: r, c: 1 })];
+                if (cell) { cell.t = 's'; cell.z = '@'; }
+            }
+            ws['!cols'] = [{ wch: 6 }, { wch: 26 }, { wch: 24 }, { wch: 18 }, { wch: 22 }, { wch: 22 }];
+        }
+        if (s[0] === 'TagTrung' || s[0] === 'TheoViTri') {
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            for (let r = 1; r <= range.e.r; r++) {
+                const cell = ws[XLSX.utils.encode_cell({ r: r, c: 0 })];
+                if (cell && cell.v !== undefined) { cell.t = 's'; cell.z = '@'; }
+            }
+        }
+        XLSX.utils.book_append_sheet(wb, ws, s[0]);
+    });
+    XLSX.writeFile(wb, 'pda_center_' + stamp() + '.xlsx');
+    setStatus('Đã xuất Excel ' + filtered.length + ' dòng (5 sheet: TongHop, ChiTiet, TheoViTri, TheoUser, TagTrung).', 'success');
+}
+
+function exportCsv() {
+    if (filtered.length === 0) { setStatus('Không có dữ liệu để xuất.', 'error'); return; }
+    const data = buildExportRows().detail;
+    const csv = data.map(function (row) {
+        return row.map(function (c) {
+            const s = String(c == null ? '' : c);
+            return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+        }).join(',');
+    }).join('\r\n');
+    downloadBlob('\ufeff' + csv, 'pda_center_' + stamp() + '.csv', 'text/csv;charset=utf-8');
+    setStatus('Đã xuất CSV ' + filtered.length + ' dòng (mở bằng Excel vẫn giữ nguyên Tag ID dạng text).', 'success');
+}
+
+function downloadBlob(content, filename, mime) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// =========================================================================
+// SETTINGS (DÙNG CHUNG VỚI APP PDA)
+// =========================================================================
+function openSettings() {
+    const cfg = getConfig();
+    $('cfgUrl').value = cfg.url;
+    $('cfgKey').value = cfg.anonKey;
+    $('cfgTable').value = cfg.tableName;
+    $('settingsModal').classList.remove('hidden');
+}
+function closeSettings() { $('settingsModal').classList.add('hidden'); }
+$('btnSettings').addEventListener('click', openSettings);
+$('btnCloseSettings').addEventListener('click', closeSettings);
+$('btnCloseCfg2').addEventListener('click', closeSettings);
+$('btnSaveCfg').addEventListener('click', function () {
+    const cfg = saveConfig($('cfgUrl').value, $('cfgKey').value, $('cfgTable').value);
+    closeSettings();
+    setStatus('Đã lưu cấu hình (bảng: ' + cfg.tableName + '). Bấm 🔄 LÀM MỚI để tải.', 'success');
+    renderMeta();
+});
+
+// =========================================================================
+// SỰ KIỆN UI
+// =========================================================================
+btnRefresh.addEventListener('click', refresh);
+btnExportXls.addEventListener('click', exportExcel);
+btnExportCsv.addEventListener('click', exportCsv);
+
+let searchTimer = null;
+fSearch.addEventListener('input', function () {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(applyFilters, 180);
+});
+[fLoc, fUser, fFrom, fTo, fDupOnly].forEach(function (el) {
+    el.addEventListener('change', applyFilters);
+});
+$('btnResetFilter').addEventListener('click', function () {
+    fSearch.value = ''; fLoc.value = ''; fUser.value = ''; fFrom.value = ''; fTo.value = ''; fDupOnly.checked = false;
+    applyFilters();
+});
+$('btnPrev').addEventListener('click', function () { if (page > 1) { page--; renderTable(); } });
+$('btnNext').addEventListener('click', function () { page++; renderTable(); });
+$('pgSize').addEventListener('change', function () { perPage = parseInt(this.value, 10) || 50; page = 1; renderTable(); });
+
+document.querySelectorAll('th[data-sort]').forEach(function (th) {
+    th.addEventListener('click', function () {
+        const k = th.getAttribute('data-sort');
+        if (!k) return;
+        if (sortKey === k) sortDir = (sortDir === 'asc' ? 'desc' : 'asc');
+        else { sortKey = k; sortDir = 'asc'; }
+        sortRows();
+        page = 1;
+        renderTable();
+    });
+});
+
+window.addEventListener('online', function () {
+    updateNet(false);
+    refresh();
+});
+window.addEventListener('offline', function () {
+    updateNet(false);
+    setStatus('OFFLINE — đang hiển thị dữ liệu cache. Kết nối Internet để tải bản mới nhất.', 'info');
+});
+
+// =========================================================================
+// INIT — hiển thị cache ngay (nếu có), sau đó tải mới nếu có mạng
+// =========================================================================
+(function init() {
+    updateNet(false);
+    renderMeta();
+    const cache = loadCache();
+    if (cache) {
+        allRows = cache.rows;
+        lastUpdate = new Date(cache.ts);
+        fromCache = true;
+        buildFilterOptions();
+        applyFilters();
+        setStatus('Đang hiển thị cache ' + fmtTime(lastUpdate) + ' (' + cache.rows.length + ' dòng).' +
+            (navigator.onLine ? ' Đang tải bản mới nhất...' : ''), 'info');
+    }
+    if (navigator.onLine) refresh();
+    else setStatus('OFFLINE — hiển thị cache (nếu có). Tính năng tải/excel CSV vẫn chạy khi có mạng.', 'info');
+})();
+</script>
+</body>
+</html>
