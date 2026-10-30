@@ -454,7 +454,8 @@
             }
 
             for (let i = 0; i < len; i++) {
-                const item = scannedData[i];
+                const realIndex = len - 1 - i;   // Dòng mới nhất hiển thị trên CÙNG
+                const item = scannedData[realIndex];
                 const isDuplicate = (tagCount.get(item.tag) || 0) > 1;
                 const syncBadge = item.synced
                     ? '<span class="text-emerald-400 font-bold">✓ SYNC</span>'
@@ -468,8 +469,8 @@
                     '<td class="py-3 text-center text-[10px]">' + syncBadge + '</td>' +
                     '<td class="py-3 text-center">' +
                     '<div class="flex justify-center gap-2">' +
-                    '<button data-idx="' + i + '" data-act="edit" class="text-indigo-400" title="Sửa">✏️</button>' +
-                    '<button data-idx="' + i + '" data-act="del" class="text-rose-400" title="Xóa">🗑️</button>' +
+                    '<button data-idx="' + realIndex + '" data-act="edit" class="text-indigo-400" title="Sửa">✏️</button>' +
+                    '<button data-idx="' + realIndex + '" data-act="del" class="text-rose-400" title="Xóa">🗑️</button>' +
                     '</div></td></tr>';
             }
 
