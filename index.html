@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PDA AI MAPPING (OFFLINE-FIRST)</title>
+    <style>
+        :root {
+            --neon-indigo: #6366f1;
+            --neon-cyan: #06b6d4;
+            --neon-emerald: #10b981;
+            --neon-rose: #f43f5e;
+            --neon-amber: #f59e0b;
+            --bg-dark: #020617;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-dark);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #e2e8f0;
+            overflow-x: hidden;
+            min-height: 100vh;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .font-cyber { font-family: 'Courier New', Courier, monospace; }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+        }
+        .duplicate-alert {
+            background: rgba(244, 63, 94, 0.2) !important;
+            animation: alert-flash 0.8s infinite alternate;
+            border-left: 4px solid var(--neon-rose) !important;
+        }
+        @keyframes alert-flash {
+            from { box-shadow: inset 0 0 0px var(--neon-rose); }
+            to { box-shadow: inset 0 0 15px var(--neon-rose); }
+        }
+        .scan-input {
+            font-family: 'Courier New', monospace;
+            background: rgba(0, 0, 0, 0.45) !important;
+            color: var(--neon-cyan) !important;
+            text-shadow: 0 0 10px rgba(6, 182, 212, 0.6);
+        }
+        .scan-input::placeholder { color: rgba(148, 163, 184, 0.45); text-shadow: none; }
+        .hidden { display: none !important; }
+        .max-w-lg { max-width: 32rem; }
+        .w-full { width: 100%; }
+        .rounded-\[32px\] { border-radius: 32px; }
+        .rounded-2xl { border-radius: 1rem; }
+        .rounded-xl { border-radius: 0.75rem; }
+        .rounded-full { border-radius: 9999px; }
+        .overflow-hidden { overflow: hidden; }
+        .overflow-x-auto { overflow-x: auto; }
+        .border-t-4 { border-top-width: 4px; border-top-style: solid; }
+        .border-indigo-500 { border-color: #6366f1; }
+        .border-cyan-500 { border-color: #06b6d4; }
+        .p-8 { padding: 2rem; }
+        .p-6 { padding: 1.5rem; }
+        .p-5 { padding: 1.25rem; }
+        .p-4 { padding: 1rem; }
+        .p-3 { padding: 0.75rem; }
+        .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+        .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+        .px-4 { padding-left: 1rem; padding-right: 1rem; }
+        .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+        .mb-8 { margin-bottom: 2rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-3 { margin-bottom: 0.75rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-1 { margin-bottom: 0.25rem; }
+        .text-center { text-align: center; }
+        .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+        .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+        .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+        .text-xs { font-size: 0.875rem; line-height: 1.25rem; }
+        .text-\[10px\] { font-size: 10px; }
+        .text-\[9px\] { font-size: 9px; }
+        .font-black { font-weight: 900; }
+        .font-bold { font-weight: 700; }
+        .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+        .uppercase { text-transform: uppercase; }
+        .tracking-widest { letter-spacing: 0.1em; }
+        .tracking-\[0\.3em\] { letter-spacing: 0.3em; }
+        .text-white { color: #ffffff; }
+        .text-indigo-400 { color: #818cf8; }
+        .text-cyan-400 { color: #22d3ee; }
+        .text-emerald-400 { color: #34d399; }
+        .text-amber-400 { color: #fbbf24; }
+        .text-rose-400 { color: #fb7185; }
+        .text-slate-300 { color: #cbd5e1; }
+        .text-slate-400 { color: #94a3b8; }
+        .text-slate-500 { color: #64748b; }
+        .bg-indigo-600 { background-color: #4f46e5; }
+        .bg-cyan-600 { background-color: #0891b2; }
+        .bg-emerald-600 { background-color: #059669; }
+        .bg-slate-800 { background-color: #1e293b; }
+        .bg-black\/40 { background-color: rgba(0, 0, 0, 0.4); }
+        .flex { display: flex; }
+        .grid { display: grid; }
+        .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-3 { gap: 0.75rem; }
+        .gap-4 { gap: 1rem; }
+        .max-h-72 { max-height: 18rem; }
+        .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .min-w-0 { min-width: 0; }
+        .shrink-0 { flex-shrink: 0; }
+        .relative { position: relative; }
+        .fixed { position: fixed; }
+        .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+        .z-50 { z-index: 50; }
+        .w-20 { width: 5rem; }
+        button {
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+            transition: all 0.15s ease;
+        }
+        button:active { transform: scale(0.96); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        input {
+            border: 2px solid rgba(99, 102, 241, 0.5);
+            outline: none;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.4);
+        }
+        input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+        }
+        table { border-collapse: collapse; width: 100%; }
+        tbody tr { border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.4); border-radius: 3px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .dot-online { background-color: #10b981; box-shadow: 0 0 8px #10b981; }
+        .dot-offline { background-color: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
+        .dot-syncing { background-color: #6366f1; box-shadow: 0 0 8px #6366f1; animation: pulse 0.6s infinite alternate; }
+        @keyframes pulse { from { opacity: 0.4; } to { opacity: 1; } }
+        #spinner { display: none; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .is-syncing #spinner { display: inline-block; }
+    </style>
+</head>
+<body class="p-4 min-h-screen flex items-center justify-center">
+
+    <!-- MÀN HÌNH 1: ĐĂNG NHẬP OPERATOR -->
+    <div id="loginScreen" class="max-w-lg w-full glass-panel rounded-[32px] overflow-hidden border-t-4 border-indigo-500 p-8">
+        <div class="text-center mb-8">
+            <h1 class="font-cyber text-2xl font-black tracking-widest text-white mb-2">OPERATOR LOGIN</h1>
+            <p class="text-[10px] uppercase tracking-[0.3em] text-indigo-400 font-bold">Nhập tên người quét để tiếp tục</p>
+        </div>
+        <div class="mb-4">
+            <input type="text" id="userNameInput"
+                   class="scan-input w-full p-5 border-2 rounded-2xl text-center text-xl font-bold"
+                   placeholder="TÊN NGƯỜI QUÉT..." autocomplete="off" autofocus>
+        </div>
+        <button id="btnLogin" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold">
+            VÀO MÀN HÌNH QUÉT
+        </button>
+    </div>
+
+    <!-- MÀN HÌNH 2: KHÓA VỊ TRÍ -->
+    <div id="locationScreen" class="hidden max-w-lg w-full glass-panel rounded-[32px] overflow-hidden border-t-4 border-cyan-500 p-8">
+        <div class="text-center mb-8">
+            <h1 class="font-cyber text-2xl font-black tracking-widest text-white mb-2">LOCATION MAPPING</h1>
+            <p class="text-[10px] uppercase tracking-[0.3em] text-cyan-400 font-bold">Nhập vị trí để gắn Tag ID</p>
+        </div>
+        <div class="mb-4">
+            <input type="text" id="locationInput"
+                   class="scan-input w-full p-5 border-2 rounded-2xl text-center text-xl font-bold"
+                   placeholder="NHẬP VỊ TRÍ..." autocomplete="off">
+        </div>
+        <button id="btnSetLocation" class="w-full bg-cyan-600 text-white py-4 rounded-2xl font-bold">
+            KHÓA VỊ TRÍ VÀ BẮT ĐẦU QUÉT
+        </button>
+    </div>
+
+    <!-- MÀN HÌNH 3: QUÉT MÃ & ĐỒNG BỘ -->
+    <div id="mainApp" class="hidden max-w-lg w-full glass-panel rounded-[32px] overflow-hidden border-t-4 border-indigo-500">
+        <!-- Header -->
+        <div class="p-6 text-center relative overflow-hidden">
+            <div class="flex justify-between items-center mb-3">
+                <div id="networkBadge" class="flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.1);">
+                    <span id="networkDot" class="status-dot dot-offline"></span>
+                    <span id="networkText" class="text-amber-400">OFFLINE NỘI BỘ</span>
+                </div>
+                <button id="btnOpenSettings" class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-slate-300" style="background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4);">
+                    ⚙️ SUPABASE
+                </button>
+            </div>
+            <h1 class="font-cyber text-2xl font-black tracking-widest text-white mb-1">PDA AI MAPPING</h1>
+            <div class="flex justify-center items-center gap-2">
+                <span class="status-dot dot-online"></span>
+                <p class="text-[10px] uppercase tracking-[0.3em] text-indigo-400 font-bold">IndexedDB Offline Storage</p>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-6" style="padding-top: 0;">
+            <!-- User & Vị trí -->
+            <div class="flex items-center justify-between gap-4 rounded-2xl p-4 mb-4" style="border: 1px solid rgba(6, 182, 212, 0.3); background: rgba(6, 182, 212, 0.1);">
+                <div class="min-w-0">
+                    <p class="text-[9px] font-bold uppercase tracking-widest text-slate-400">
+                        User: <span id="activeUser" class="text-indigo-400"></span> • Vị trí
+                    </p>
+                    <p id="activeLocation" class="truncate font-cyber text-lg font-bold text-cyan-400"></p>
+                </div>
+                <button id="btnChangeLocation" class="shrink-0 rounded-xl bg-cyan-600 px-4 py-3 text-xs font-bold text-white">
+                    ĐỔI VỊ TRÍ
+                </button>
+            </div>
+
+            <!-- Ô quét -->
+            <div class="mb-4">
+                <label id="inputLabel" class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest block mb-2">Scanning: TAG ID (Lưu IndexedDB ngay)</label>
+                <input type="text" id="barcodeInput"
+                       class="scan-input w-full p-5 border-2 rounded-2xl text-center text-2xl font-bold"
+                       placeholder="READY TO SCAN..." autocomplete="off" autofocus>
+            </div>
+
+            <!-- Nút Sync -->
+            <button id="btnSyncSupabase" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 mb-4" style="box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);">
+                <span id="spinner"></span>
+                <span>☁️</span>
+                <span id="syncBtnText">ĐẨY LÊN SUPABASE (0 CHỜ)</span>
+            </button>
+
+            <!-- Trạng thái sync -->
+            <div id="syncStatusBox" class="hidden rounded-xl p-3 text-xs font-bold text-center mb-4"></div>
+
+            <!-- Purge -->
+            <button id="btnClear" class="w-full bg-slate-800 text-slate-400 py-3 rounded-2xl font-bold text-xs mb-4">
+                🗑️ XÓA TOÀN BỘ DỮ LIỆU LOCAL
+            </button>
+        </div>
+
+        <!-- Bảng dữ liệu -->
+        <div class="p-6 bg-black/40" style="border-top: 1px solid rgba(255, 255, 255, 0.1);">
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Data Matrix (IndexedDB)</span>
+                <div class="flex gap-2">
+                    <span id="pendingCount" class="text-amber-400 text-[10px] px-3 py-1 rounded-full font-bold" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3);">0 PENDING</span>
+                    <span id="count" class="text-indigo-400 text-[10px] px-3 py-1 rounded-full font-bold" style="background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.3);">0 ITEMS</span>
+                </div>
+            </div>
+            <div class="overflow-x-auto max-h-72 custom-scrollbar">
+                <table class="w-full text-left text-xs font-mono">
+                    <thead class="text-slate-500" style="border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                        <tr>
+                            <th class="py-3 pl-2">TAG ID</th>
+                            <th class="py-3 pl-2">VỊ TRÍ</th>
+                            <th class="py-3 text-center">SYNC</th>
+                            <th class="py-3 text-center w-20">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataList"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CẤU HÌNH SUPABASE -->
+    <div id="settingsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(2, 6, 23, 0.85);">
+        <div class="max-w-lg w-full glass-panel rounded-[32px] border-t-4 border-indigo-500 p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="font-cyber text-lg font-bold text-white">CẤU HÌNH SUPABASE</h2>
+                <button id="btnCloseSettings" class="text-slate-400 text-lg font-bold px-2">✕</button>
+            </div>
+            <p class="text-xs text-slate-400 mb-4">
+                Cấu hình đã được điền sẵn. Chỉ chỉnh sửa khi cần đổi project/table.
+            </p>
+            <div class="mb-4">
+                <label class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest block mb-1">Supabase REST URL</label>
+                <input type="text" id="cfgSupabaseUrl" class="w-full p-3 rounded-xl text-xs font-mono">
+            </div>
+            <div class="mb-4">
+                <label class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest block mb-1">API Key (anon / service_role)</label>
+                <input type="password" id="cfgSupabaseKey" class="w-full p-3 rounded-xl text-xs font-mono">
+            </div>
+            <div class="mb-4">
+                <label class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest block mb-1">Table Name</label>
+                <input type="text" id="cfgTableName" class="w-full p-3 rounded-xl text-xs font-mono">
+            </div>
+            <div class="p-3 rounded-xl text-[10px] font-mono text-slate-400 mb-4" style="background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.08);">
+                <p class="text-cyan-400 font-bold mb-1">Cột cần tạo trong Supabase:</p>
+                <p>• tag_id (text) — Mã Tag</p>
+                <p>• location (text) — Vị trí</p>
+                <p>• user_name (text) — Người quét</p>
+                <p>• scanned_at (text) — Thời gian quét</p>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <button id="btnSaveSettings" class="bg-indigo-600 text-white py-3 rounded-xl font-bold text-xs">💾 LƯU</button>
+                <button id="btnResetSyncFlags" class="bg-slate-800 text-amber-400 py-3 rounded-xl font-bold text-xs">🔄 RESET SYNC</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        'use strict';
+
+        // =========================================================================
+        // SUPABASE CONFIG — ĐÃ CÀI SẴN, KHÔNG CẦN NHẬP LẠI
+        // =========================================================================
+        const DEFAULT_SUPABASE_CONFIG = {
+            url: 'https://iipioojuoucyhipvyscq.supabase.co',
+            // service_role key (bypass RLS, dùng cho PDA nội bộ) — key này đã test HTTP 200
+            anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpcGlvb2p1b3VjeWhpcHZ5c2NxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MzMxMzc4NiwiZXhwIjoyMTA4ODg5Nzg2fQ.3pMRmZ_n_LerAwJQJ4XvYs2BWrUHDz4ITcd0YqXXMzs',
+            // Alternative anon key (đã test hợp lệ, HTTP 404 do chưa có bảng):
+            // 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpcGlvb2p1b3VjeWhpcHZ5c2NxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzMTM3ODYsImV4cCI6MjEwODg4OTc4Nn0.M0Yz9Tecp66CNkkSfUOYP1cbXrtd9IyeCo-MxpzKiz0'
+            tableName: 'pda_scans'
+        };
+        const CONFIG_STORAGE_KEY = 'pda_supabase_config_v1';
+
+        const SYNC_BATCH_SIZE = 200;   // Số bản ghi tối đa mỗi request POST
+        const DB_NAME = 'pda_tag_database';
+        const DB_VERSION = 2;
+        const STORE_NAME = 'tags';
+
+        let db;
+        let scannedData = [];
+        let isSyncing = false;
+        let currentUser = '';
+        let currentLocation = '';
+
+        // DOM
+        const barcodeInput = document.getElementById('barcodeInput');
+        const dataList = document.getElementById('dataList');
+        const countDisp = document.getElementById('count');
+        const pendingCountDisp = document.getElementById('pendingCount');
+        const syncBtnText = document.getElementById('syncBtnText');
+        const btnSyncSupabase = document.getElementById('btnSyncSupabase');
+        const syncStatusBox = document.getElementById('syncStatusBox');
+        const loginScreen = document.getElementById('loginScreen');
+        const mainApp = document.getElementById('mainApp');
+        const userNameInput = document.getElementById('userNameInput');
+        const btnLogin = document.getElementById('btnLogin');
+        const locationScreen = document.getElementById('locationScreen');
+        const locationInput = document.getElementById('locationInput');
+        const btnSetLocation = document.getElementById('btnSetLocation');
+        const btnChangeLocation = document.getElementById('btnChangeLocation');
+        const activeLocation = document.getElementById('activeLocation');
+        const activeUser = document.getElementById('activeUser');
+        const networkDot = document.getElementById('networkDot');
+        const networkText = document.getElementById('networkText');
+        const settingsModal = document.getElementById('settingsModal');
+        const btnOpenSettings = document.getElementById('btnOpenSettings');
+        const btnCloseSettings = document.getElementById('btnCloseSettings');
+        const btnSaveSettings = document.getElementById('btnSaveSettings');
+        const btnResetSyncFlags = document.getElementById('btnResetSyncFlags');
+        const cfgSupabaseUrl = document.getElementById('cfgSupabaseUrl');
+        const cfgSupabaseKey = document.getElementById('cfgSupabaseKey');
+        const cfgTableName = document.getElementById('cfgTableName');
+
+        // =========================================================================
+        // SUPABASE CONFIG HELPERS
+        // =========================================================================
+        function getSupabaseConfig() {
+            try {
+                const raw = localStorage.getItem(CONFIG_STORAGE_KEY);
+                if (raw) {
+                    const p = JSON.parse(raw);
+                    return {
+                        url: (p.url || DEFAULT_SUPABASE_CONFIG.url).trim().replace(/\/+$/, ''),
+                        anonKey: (p.anonKey || DEFAULT_SUPABASE_CONFIG.anonKey).trim(),
+                        tableName: (p.tableName || DEFAULT_SUPABASE_CONFIG.tableName).trim() || 'pda_scans'
+                    };
+                }
+            } catch (_) {}
+            return {
+                url: DEFAULT_SUPABASE_CONFIG.url,
+                anonKey: DEFAULT_SUPABASE_CONFIG.anonKey,
+                tableName: DEFAULT_SUPABASE_CONFIG.tableName
+            };
+        }
+
+        function saveSupabaseConfig(url, anonKey, tableName) {
+            const config = {
+                url: url.trim().replace(/\/+$/, ''),
+                anonKey: anonKey.trim(),
+                tableName: tableName.trim() || 'pda_scans'
+            };
+            localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(config));
+            return config;
+        }
+
+        // =========================================================================
+        // UI HELPERS
+        // =========================================================================
+        function showSyncStatus(message, type) {
+            type = type || 'info';
+            syncStatusBox.classList.remove('hidden');
+            syncStatusBox.textContent = message;
+            if (type === 'success') {
+                syncStatusBox.style.background = 'rgba(16, 185, 129, 0.15)';
+                syncStatusBox.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+                syncStatusBox.style.color = '#34d399';
+            } else if (type === 'error') {
+                syncStatusBox.style.background = 'rgba(244, 63, 94, 0.15)';
+                syncStatusBox.style.border = '1px solid rgba(244, 63, 94, 0.4)';
+                syncStatusBox.style.color = '#fb7185';
+            } else {
+                syncStatusBox.style.background = 'rgba(99, 102, 241, 0.15)';
+                syncStatusBox.style.border = '1px solid rgba(99, 102, 241, 0.4)';
+                syncStatusBox.style.color = '#818cf8';
+            }
+        }
+
+        function updateNetworkStatus() {
+            if (isSyncing) return;
+            if (navigator.onLine) {
+                networkDot.className = 'status-dot dot-online';
+                networkText.textContent = 'ONLINE (SẴN SÀNG SYNC)';
+                networkText.className = 'text-emerald-400';
+            } else {
+                networkDot.className = 'status-dot dot-offline';
+                networkText.textContent = 'OFFLINE NỘI BỘ (LƯU INDEXEDDB)';
+                networkText.className = 'text-amber-400';
+            }
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function renderTable() {
+            const len = scannedData.length;
+            const unsynced = scannedData.reduce(function (acc, d) { return acc + (d.synced ? 0 : 1); }, 0);
+            const html = new Array(len);
+
+            for (let i = 0; i < len; i++) {
+                const item = scannedData[i];
+                const isDuplicate = scannedData.some(function (d) { return d.tag === item.tag; });
+                const syncBadge = item.synced
+                    ? '<span class="text-emerald-400 font-bold">✓ SYNC</span>'
+                    : '<span class="text-amber-400 font-bold">⏳ LOCAL</span>';
+                const cls = isDuplicate ? 'duplicate-alert' : '';
+                const tagCls = isDuplicate ? 'text-rose-400' : 'text-cyan-400';
+                html[i] =
+                    '<tr class="' + cls + '">' +
+                    '<td class="py-3 pl-2 font-bold ' + tagCls + '">' + escapeHtml(item.tag) + '</td>' +
+                    '<td class="py-3 pl-2 text-slate-300">' + escapeHtml(item.location || '') + '</td>' +
+                    '<td class="py-3 text-center text-[10px]">' + syncBadge + '</td>' +
+                    '<td class="py-3 text-center">' +
+                    '<div class="flex justify-center gap-2">' +
+                    '<button data-idx="' + i + '" data-act="edit" class="text-indigo-400" title="Sửa">✏️</button>' +
+                    '<button data-idx="' + i + '" data-act="del" class="text-rose-400" title="Xóa">🗑️</button>' +
+                    '</div></td></tr>';
+            }
+
+            dataList.innerHTML = html.join('');
+            countDisp.textContent = len + ' ITEMS';
+            pendingCountDisp.textContent = unsynced + ' PENDING';
+            if (!isSyncing) {
+                syncBtnText.textContent = 'ĐẨY LÊN SUPABASE (' + unsynced + ' CHỜ)';
+            }
+        }
+
+        // Event delegation thay vì onclick inline (nhanh hơn & gọn hơn)
+        dataList.addEventListener('click', function (e) {
+            const btn = e.target.closest('button[data-idx]');
+            if (!btn) return;
+            const idx = parseInt(btn.getAttribute('data-idx'), 10);
+            if (btn.getAttribute('data-act') === 'edit') editItem(idx);
+            else deleteItem(idx);
+        });
+
+        // =========================================================================
+        // INDEXEDDB — MỞ, GHI ĐƠN / GHI HÀNG LOẠT (TỐI ƯU TỐC ĐỘ)
+        // =========================================================================
+        function openDatabase() {
+            return new Promise(function (resolve, reject) {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onupgradeneeded = function (event) {
+                    const database = event.target.result;
+                    if (!database.objectStoreNames.contains(STORE_NAME)) {
+                        const store = database.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                        store.createIndex('synced', 'synced', { unique: false });
+                    } else {
+                        const store = event.target.transaction.objectStore(STORE_NAME);
+                        if (!store.indexNames.contains('synced')) {
+                            store.createIndex('synced', 'synced', { unique: false });
+                        }
+                    }
+                };
+                request.onsuccess = function (event) {
+                    db = event.target.result;
+                    resolve(db);
+                };
+                request.onerror = function () { reject(request.error); };
+            });
+        }
+
+        function loadData() {
+            return new Promise(function (resolve, reject) {
+                const tx = db.transaction(STORE_NAME, 'readonly');
+                const req = tx.objectStore(STORE_NAME).getAll();
+                req.onsuccess = function () {
+                    scannedData = req.result || [];
+                    resolve();
+                };
+                req.onerror = function () { reject(req.error); };
+            });
+        }
+
+        function addTag(tag, user, scannedAt, location) {
+            return new Promise(function (resolve, reject) {
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                const record = { tag: tag, user: user, scannedAt: scannedAt, location: location, synced: false, syncedAt: null };
+                const req = tx.objectStore(STORE_NAME).add(record);
+                req.onsuccess = function () {
+                    record.id = req.result;
+                    scannedData.push(record);
+                    resolve(record);
+                };
+                tx.onerror = function () { reject(tx.error); };
+            });
+        }
+
+        // Ghi hàng loạt nhiều record trong 1 transaction duy nhất (rất nhanh)
+        function bulkUpdateTags(items) {
+            return new Promise(function (resolve, reject) {
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                const store = tx.objectStore(STORE_NAME);
+                for (let i = 0; i < items.length; i++) {
+                    store.put(items[i]);
+                }
+                tx.oncomplete = function () { resolve(); };
+                tx.onerror = function () { reject(tx.error); };
+                tx.onabort = function () { reject(tx.error); };
+            });
+        }
+
+        function updateTag(item) {
+            return bulkUpdateTags([item]);
+        }
+
+        function removeTag(id) {
+            return new Promise(function (resolve, reject) {
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                tx.objectStore(STORE_NAME).delete(id);
+                tx.oncomplete = function () { resolve(); };
+                tx.onerror = function () { reject(tx.error); };
+            });
+        }
+
+        function clearTags() {
+            return new Promise(function (resolve, reject) {
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                tx.objectStore(STORE_NAME).clear();
+                tx.oncomplete = function () { resolve(); };
+                tx.onerror = function () { reject(tx.error); };
+            });
+        }
+
+        // =========================================================================
+        // QUÉT & CRUD
+        // =========================================================================
+        function formatNow() {
+            const d = new Date();
+            const pad = function (n) { return String(n).padStart(2, '0'); };
+            return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+        }
+
+        barcodeInput.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter') return;
+            const val = barcodeInput.value.trim();
+            if (!val) return;
+
+            addTag(val, currentUser, formatNow(), currentLocation)
+                .then(function () {
+                    renderTable();
+                    barcodeInput.value = '';
+                })
+                .catch(function (err) {
+                    console.error('Không thể lưu Tag ID:', err);
+                    alert('Không thể lưu Tag ID. Vui lòng thử lại!');
+                });
+        });
+
+        function editItem(index) {
+            const item = scannedData[index];
+            if (!item) return;
+            const newTag = prompt('Sửa Tag ID:', item.tag);
+            if (newTag === null) return;
+            const trimmed = newTag.trim();
+            if (!trimmed) return;
+
+            const updated = Object.assign({}, item, { tag: trimmed, synced: false, syncedAt: null });
+            updateTag(updated)
+                .then(function () {
+                    scannedData[index] = updated;
+                    renderTable();
+                })
+                .catch(function (err) {
+                    console.error('Không thể cập nhật Tag ID:', err);
+                    alert('Không thể cập nhật Tag ID!');
+                });
+        }
+
+        function deleteItem(index) {
+            const item = scannedData[index];
+            if (!item) return;
+            if (!confirm('Xóa bản ghi này?')) return;
+
+            removeTag(item.id)
+                .then(function () {
+                    scannedData.splice(index, 1);
+                    renderTable();
+                })
+                .catch(function (err) {
+                    console.error('Không thể xóa Tag ID:', err);
+                    alert('Không thể xóa Tag ID!');
+                });
+        }
+
+        // =========================================================================
+        // SYNC LÊN SUPABASE (REST API, BATCH, TỐI ƯU TỐC ĐỘ)
+        // =========================================================================
+        async function syncToSupabase() {
+            if (isSyncing) return;
+
+            const unsyncedItems = scannedData.filter(function (item) { return !item.synced; });
+            if (unsyncedItems.length === 0) {
+                showSyncStatus('Tất cả dữ liệu đã được đẩy lên Supabase!', 'success');
+                return;
+            }
+
+            const config = getSupabaseConfig();
+            if (!config.url || !config.anonKey || !config.tableName) {
+                openSettingsModal();
+                showSyncStatus('Thiếu cấu hình Supabase!', 'error');
+                return;
+            }
+
+            isSyncing = true;
+            btnSyncSupabase.disabled = true;
+            btnSyncSupabase.classList.add('is-syncing');
+            networkDot.className = 'status-dot dot-syncing';
+            networkText.textContent = 'ĐANG SYNC...';
+            networkText.className = 'text-indigo-400';
+            syncBtnText.textContent = 'ĐANG ĐẨY ' + unsyncedItems.length + ' BẢN GHI...';
+
+            const endpoint = config.url + '/rest/v1/' + encodeURIComponent(config.tableName);
+            const total = unsyncedItems.length;
+            let syncedCount = 0;
+
+            try {
+                // Chia batch
+                for (let start = 0; start < total; start += SYNC_BATCH_SIZE) {
+                    const batch = unsyncedItems.slice(start, start + SYNC_BATCH_SIZE);
+                    const payload = batch.map(function (item) {
+                        return {
+                            tag_id: String(item.tag),
+                            location: item.location || '',
+                            user_name: item.user || '',
+                            scanned_at: item.scannedAt || ''
+                        };
+                    });
+
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'apikey': config.anonKey,
+                            'Authorization': 'Bearer ' + config.anonKey,
+                            'Prefer': 'return=minimal'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        let errorDetail = 'HTTP ' + response.status;
+                        try {
+                            const errJson = await response.json();
+                            errorDetail = errJson.message || errJson.error || JSON.stringify(errJson);
+                        } catch (_) {
+                            const errText = await response.text();
+                            if (errText) errorDetail = errText;
+                        }
+                        throw new Error(errorDetail);
+                    }
+
+                    // Đánh dấu đã sync ngay sau mỗi batch thành công
+                    const syncedTime = formatNow();
+                    for (let i = 0; i < batch.length; i++) {
+                        batch[i].synced = true;
+                        batch[i].syncedAt = syncedTime;
+                    }
+                    await bulkUpdateTags(batch);
+                    syncedCount += batch.length;
+                    syncBtnText.textContent = 'ĐANG ĐẨY... ' + syncedCount + '/' + total;
+                }
+
+                updateNetworkStatus();
+                renderTable();
+                showSyncStatus('Đồng bộ thành công ' + syncedCount + ' bản ghi lên Supabase!', 'success');
+            } catch (error) {
+                failedBatch = true;
+                console.error('Lỗi sync Supabase:', error);
+                updateNetworkStatus();
+                renderTable();
+                let msg = 'Lỗi: ' + (error.message || 'Kiểm tra Internet / Supabase') +
+                    ' — ' + syncedCount + '/' + total + ' bản ghi đã đẩy. Dữ liệu vẫn an toàn trong IndexedDB.';
+                if (String(error.message || '').indexOf('PGRST205') !== -1) {
+                    msg = 'BẢNG "' + config.tableName + '" CHƯA TỒN TẠI trên Supabase! Chạy SQL sau trong SQL Editor: '
+                        + 'create table public.' + config.tableName
+                        + '(tag_id text, location text, user_name text, scanned_at text, created_at timestamptz default now()); '
+                        + 'alter table public.' + config.tableName + ' enable row level security; '
+                        + 'create policy p on public.' + config.tableName + ' for all using (true) with check (true);';
+                }
+                showSyncStatus(msg, 'error');
+            } finally {
+                isSyncing = false;
+                btnSyncSupabase.disabled = false;
+                btnSyncSupabase.classList.remove('is-syncing');
+                updateNetworkStatus();
+                renderTable();
+                if (currentUser && currentLocation && !mainApp.classList.contains('hidden')) {
+                    barcodeInput.focus();
+                }
+            }
+        }
+
+        btnSyncSupabase.addEventListener('click', syncToSupabase);
+
+        // =========================================================================
+        // SETTINGS MODAL
+        // =========================================================================
+        function openSettingsModal() {
+            const config = getSupabaseConfig();
+            cfgSupabaseUrl.value = config.url;
+            cfgSupabaseKey.value = config.anonKey;
+            cfgTableName.value = config.tableName || 'pda_scans';
+            settingsModal.classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            settingsModal.classList.add('hidden');
+            if (currentUser && currentLocation && !mainApp.classList.contains('hidden')) {
+                barcodeInput.focus();
+            }
+        }
+
+        btnOpenSettings.addEventListener('click', function (e) { e.stopPropagation(); openSettingsModal(); });
+        btnCloseSettings.addEventListener('click', closeSettingsModal);
+
+        btnSaveSettings.addEventListener('click', function () {
+            const saved = saveSupabaseConfig(cfgSupabaseUrl.value, cfgSupabaseKey.value, cfgTableName.value);
+            closeSettingsModal();
+            showSyncStatus('Đã lưu cấu hình (Bảng: ' + saved.tableName + ')', 'success');
+        });
+
+        btnResetSyncFlags.addEventListener('click', async function () {
+            if (!confirm('Đặt lại TOÀN BỘ dữ liệu về trạng thái chờ sync để đẩy lại?')) return;
+            try {
+                const now = null;
+                for (let i = 0; i < scannedData.length; i++) {
+                    scannedData[i].synced = false;
+                    scannedData[i].syncedAt = now;
+                }
+                await bulkUpdateTags(scannedData);
+                renderTable();
+                closeSettingsModal();
+                showSyncStatus('Đã reset toàn bộ về PENDING!', 'info');
+            } catch (error) {
+                alert('Không thể reset trạng thái!');
+            }
+        });
+
+        // =========================================================================
+        // LOGIN & LOCATION (GIỮ NGUYÊN LOGIC)
+        // =========================================================================
+        function login() {
+            const userName = userNameInput.value.trim();
+            if (!userName) {
+                alert('Vui lòng nhập tên người quét!');
+                userNameInput.focus();
+                return;
+            }
+            currentUser = userName;
+            activeUser.textContent = currentUser;
+            loginScreen.classList.add('hidden');
+            locationScreen.classList.remove('hidden');
+            locationInput.focus();
+        }
+
+        function setLocation() {
+            const location = locationInput.value.trim();
+            if (!location) {
+                alert('Vui lòng nhập vị trí!');
+                locationInput.focus();
+                return;
+            }
+            currentLocation = location;
+            activeLocation.textContent = currentLocation;
+            locationInput.value = '';
+            locationScreen.classList.add('hidden');
+            mainApp.classList.remove('hidden');
+            barcodeInput.focus();
+        }
+
+        function changeLocation() {
+            mainApp.classList.add('hidden');
+            locationScreen.classList.remove('hidden');
+            locationInput.value = currentLocation;
+            locationInput.select();
+        }
+
+        btnLogin.addEventListener('click', login);
+        btnSetLocation.addEventListener('click', setLocation);
+        btnChangeLocation.addEventListener('click', changeLocation);
+        locationInput.addEventListener('keydown', function (event) { if (event.key === 'Enter') setLocation(); });
+        userNameInput.addEventListener('keydown', function (event) { if (event.key === 'Enter') login(); });
+
+        document.addEventListener('click', function (e) {
+            if (!settingsModal.classList.contains('hidden')) return;
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+            if (currentUser && currentLocation && !mainApp.classList.contains('hidden')) {
+                barcodeInput.focus();
+            }
+        });
+
+        // =========================================================================
+        // PURGE DATA
+        // =========================================================================
+        document.getElementById('btnClear').addEventListener('click', async function () {
+            const unsyncedCount = scannedData.filter(function (d) { return !d.synced; }).length;
+            const confirmMsg = unsyncedCount > 0
+                ? 'CẢNH BÁO: ' + unsyncedCount + ' bản ghi CHƯA ĐỒNG BỘ sẽ bị xóa vĩnh viễn. Xác nhận?'
+                : 'Xóa toàn bộ dữ liệu local?';
+            if (!confirm(confirmMsg)) return;
+
+            try {
+                await clearTags();
+                scannedData = [];
+                renderTable();
+                syncStatusBox.classList.add('hidden');
+            } catch (error) {
+                console.error('Không thể xóa dữ liệu:', error);
+                alert('Không thể xóa dữ liệu!');
+            }
+        });
+
+        // =========================================================================
+        // NETWORK LISTENERS — AUTO NOTIFY KHI CÓ MẠNG
+        // =========================================================================
+        window.addEventListener('online', function () {
+            updateNetworkStatus();
+            const pending = scannedData.filter(function (d) { return !d.synced; }).length;
+            if (pending > 0) {
+                showSyncStatus('Đã có mạng! Tự động đẩy ' + pending + ' bản ghi lên Supabase...', 'info');
+                setTimeout(function () { syncToSupabase(); }, 800);
+            }
+        });
+        window.addEventListener('offline', updateNetworkStatus);
+
+        // =========================================================================
+        // INIT
+        // =========================================================================
+        async function init() {
+            updateNetworkStatus();
+            try {
+                await openDatabase();
+                await loadData();
+                renderTable();
+                userNameInput.focus();
+            } catch (error) {
+                console.error('Không thể khởi tạo IndexedDB:', error);
+                alert('Trình duyệt không mở được IndexedDB!');
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
